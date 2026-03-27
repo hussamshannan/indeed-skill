@@ -23,6 +23,10 @@
 
 The **Indeed Tailored CV** skill combines three capabilities into one automated workflow:
 
+```
+Upload CV → Extract Profile → Search Indeed → Select Jobs → Draft CV → AI-Check (human score) → Revise → Final CV
+```
+
 | Step | What Happens |
 |------|-------------|
 | **Profile Extraction** | Claude reads your uploaded CV (PDF or DOCX) and extracts your name, contact info, skills, work history, and education |
@@ -34,6 +38,8 @@ Each generated CV is:
 - **Human-sounding** — written to avoid AI-detection red flags, with varied verb openings and natural prose
 - **Job-specific** — the professional summary, skills order, and work experience bullets are each customised to the target role
 - **Ready to send** — exported as `.docx`, downloadable directly from the results dashboard
+
+> **Note:** This skill is optimised for Gulf-region job searches (Doha, Dubai, Riyadh, etc.) but works globally for any city with an Indeed presence.
 
 ---
 
@@ -55,7 +61,7 @@ Click the **⚙ Settings** icon (or the project name) in the left sidebar to ope
 
 1. Look for the **Skills** or **Knowledge** section in the project settings
 2. Click **"Add skill"** or **"Upload file"**
-3. Select the file: `indeed-tailored-cv-skill.skill`
+3. Select the file: `indeed-tailored-cv.skill`
 4. Wait for the upload to complete — you should see `indeed-tailored-cv` appear in the skills list
 
 ### Step 4 — Confirm Installation
@@ -146,9 +152,17 @@ In a conversation inside your Claude Project, upload your CV file. Both formats 
 - `YourName_CV.pdf`
 - `YourName_CV.docx`
 
-### Step 2 — Trigger the Skill
+### Step 2 — Tell Claude Your Target Location
 
-Type one of the trigger phrases (see [Section 7](#7-trigger-phrases)), or use the shorthand command:
+After reading your CV, Claude will ask:
+
+> "Where would you like me to search for jobs? Please provide a city and country (e.g. Dubai, UAE / London, UK / Riyadh, Saudi Arabia / Doha, Qatar)."
+
+Reply with your preferred location. Claude will not start the job search until you confirm a city and country.
+
+### Step 3 — Trigger the Skill
+
+You can trigger it with the shorthand command:
 
 ```
 /indeed-tailored-cv  [city] [country]
@@ -173,18 +187,19 @@ Find me software engineer jobs in Doha and create a tailored CV for each one
 Search for React developer jobs in Dubai and tailor my CV to the top 10 results
 ```
 
-### Step 3 — Wait for Results
+### Step 4 — Wait for Results
 
 Claude will automatically:
 1. Extract your profile from the uploaded CV
-2. Run 2+ Indeed searches using your job title and primary skills as keywords
+2. Run 2 parallel Indeed searches using your job title and primary skills as keywords
 3. Deduplicate results and select the top 10 most relevant jobs
-4. Generate one tailored `.docx` CV per job
-5. Present an interactive results dashboard
+4. Show you a match table in chat (job title, company, location, match reason, apply link)
+5. Generate one tailored `.docx` CV per job — automatically, without asking you to pick
+6. Present an interactive results dashboard
 
 This typically takes 1–3 minutes depending on CV length and network speed.
 
-### Step 4 — Download Your CVs
+### Step 5 — Download Your CVs
 
 The results dashboard shows a table with all 10 jobs. Each row has:
 - The job title and company
@@ -192,6 +207,8 @@ The results dashboard shows a table with all 10 jobs. Each row has:
 - What was tailored in that CV
 - An **Apply on Indeed** link (opens in new tab)
 - A **⬇ Download** button for the `.docx` CV file
+
+The 10 `.docx` files are also made available individually in the chat as a backup download method.
 
 ---
 
@@ -209,14 +226,15 @@ You do not need to configure any of the following — Claude handles them automa
 - Deduplicates up to 20 candidates by job ID
 - Scores relevance by: title match, skills overlap, industry alignment, seniority level
 - Fetches full job descriptions via `Indeed:get_job_details`
-- Always produces exactly 10 jobs (runs a 3rd search if deduplication leaves fewer)
+- Always produces exactly 10 jobs (runs a 3rd broader search if deduplication leaves fewer)
 
 ### CV Tailoring (Per Job)
 - Rewrites the **Professional Summary** to mirror each job's language and requirements
 - Reorders the **Skills** section to front-load keywords from the job description
 - Rewrites **Work Experience** bullets to highlight the most relevant achievements for each role
+- Surfaces relevant **Certifications** for each target role
 - Applies human writing style rules (varied verbs, concrete language, no AI-typical phrases)
-- Runs an internal AI-detection self-check before finalising each CV
+- Runs an **AI-detection self-check** before finalising each CV — if more than 2 red flags are found in any section, that section is rewritten before the `.docx` is generated
 - Proofs for grammar, spelling, and punctuation
 
 ### File Generation
@@ -255,7 +273,7 @@ Every generated CV follows this ATS-standard layout:
 ```
 [Full Name]
 [Target Job Title]
-[Email · Phone · Location]
+[Email · Phone · LinkedIn · Location]
 
 PROFESSIONAL SUMMARY
 3–4 sentences tailored to this specific job
@@ -274,6 +292,9 @@ EDUCATION
 Degree
 Institution
 Location
+
+CERTIFICATIONS (if applicable)
+Relevant certifications surfaced for this specific role
 ```
 
 ---
@@ -297,7 +318,7 @@ The skill activates when Claude detects any of these phrases (with or without a 
 The skill works for any city with an Indeed presence. Common Gulf and international locations:
 
 | Country | ISO Code | Example City Input |
-|---------|----------|--------------------|
+|---------|----------|-------------------|
 | Qatar | `QA` | `Doha, Qatar` |
 | UAE | `AE` | `Dubai, UAE` or `Abu Dhabi, UAE` |
 | Saudi Arabia | `SA` | `Riyadh, Saudi Arabia` or `Jeddah, Saudi Arabia` |
@@ -327,7 +348,7 @@ The skill works for any city with an Indeed presence. Common Gulf and internatio
 
 ### For ATS Compliance
 - Do not add logos, photos, or graphics to the generated CVs before submitting — this breaks ATS parsing.
-- The generated files use Arial font and standard section headings intentionally — resist the urge to reformat into a fancy template for online applications.
+- The generated files use Arial/Calibri font and standard section headings intentionally — resist the urge to reformat into a fancy template for online applications.
 - Use the fancy-formatted version for in-person interviews; use the plain ATS version for online submissions.
 
 ---
@@ -351,6 +372,9 @@ The skill works for any city with an Indeed presence. Common Gulf and internatio
 
 ### "I want CVs for a different city after the first run"
 → Simply say: "Now search for the same roles in Dubai, UAE" and Claude will re-run the job search and generate a new set of 10 CVs for the new location.
+
+### "Claude generated fewer than 10 CVs"
+→ Claude is designed to always produce exactly 10. If it falls short, ask: "Please run an additional search and generate CVs for the remaining slots."
 
 ---
 
