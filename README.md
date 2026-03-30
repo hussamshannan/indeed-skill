@@ -1,6 +1,6 @@
 # Indeed Tailored CV Skill — Complete Guide
 
-> **What this skill does:** Automatically searches Indeed for jobs that match your profile, then generates a fully tailored, ATS-optimised `.docx` CV for each one — all in a single conversation with Claude.
+> **What this skill does:** Searches Indeed for jobs that match your profile (via web search or MCP integration), then generates fully tailored, ATS-optimised `.docx` CVs for each one — in a conversation with Claude.
 
 ---
 
@@ -8,7 +8,7 @@
 
 1. [What This Skill Does](#1-what-this-skill-does)
 2. [How to Install the Skill in Claude](#2-how-to-install-the-skill-in-claude)
-3. [How to Connect the Indeed MCP Server](#3-how-to-connect-the-indeed-mcp-server)
+3. [How Job Searching Works](#3-how-job-searching-works)
 4. [How to Use the Skill — Step by Step](#4-how-to-use-the-skill--step-by-step)
 5. [What Claude Does Automatically](#5-what-claude-does-automatically)
 6. [Output You Will Receive](#6-output-you-will-receive)
@@ -16,6 +16,7 @@
 8. [Supported Locations & Country Codes](#8-supported-locations--country-codes)
 9. [Tips & Best Practices](#9-tips--best-practices)
 10. [Troubleshooting](#10-troubleshooting)
+11. [Limitations & Known Constraints](#11-limitations--known-constraints)
 
 ---
 
@@ -41,11 +42,19 @@ Each generated CV is:
 
 > **Note:** This skill is optimised for Gulf-region job searches (Doha, Dubai, Riyadh, etc.) but works globally for any city with an Indeed presence.
 
+> **Heads-up:** See [Limitations & Known Constraints](#11-limitations--known-constraints) for honest notes about what to expect.
+
 ---
 
 ## 2. How to Install the Skill in Claude
 
 Skills are installed by uploading the `.skill` file into your Claude Projects workspace. Follow these steps:
+
+### What Is a `.skill` File?
+
+A `.skill` file is simply a **ZIP archive** containing a `SKILL.md` file — the instructions that tell Claude how to behave. You can verify this yourself by renaming it to `.zip` and opening it. Claude Projects accept this format directly.
+
+Alternatively, you can **extract the ZIP** and paste the contents of `indeed-tailored-cv/SKILL.md` directly into a Project's Knowledge section if your plan doesn't support `.skill` uploads.
 
 ### Step 1 — Open Claude Projects
 
@@ -76,70 +85,44 @@ Claude should mention `indeed-tailored-cv` in its response.
 
 ---
 
-## 3. How to Connect the Indeed MCP Server
+## 3. How Job Searching Works
 
-The skill uses the **Indeed MCP (Model Context Protocol) server** to search for live job listings. Without this connection, Claude will fall back to web search — which still works but returns less structured job data.
+The skill searches Indeed for live job listings using one of two methods. **Web search is the default and most reliable method today.**
 
-### What is MCP?
+### Method 1 — Web Search (Default)
 
-MCP (Model Context Protocol) is a standard that lets Claude connect to external services — like Indeed — and call their APIs directly within a conversation. Think of it as giving Claude a live plugin.
+No setup required. Claude uses its built-in web search capability to find jobs on Indeed's public job pages (e.g. `qa.indeed.com`, `ae.indeed.com`). This works out of the box on any Claude plan that supports web search.
 
-### Step-by-Step: Connect Indeed MCP in Claude
-
-#### Option A — Claude.ai Interface (Recommended)
-
-1. Go to **[claude.ai](https://claude.ai)** and open your Project
-2. Click **⚙ Settings** → **Integrations** or **Connectors**
-3. Look for **"Add MCP Server"** or **"Connect a tool"**
-4. Enter the following details:
-
-   | Field | Value |
-   |-------|-------|
-   | **Name** | `Indeed` |
-   | **Server URL** | `https://mcp.indeed.com/claude/mcp` |
-   | **Type** | `URL` (SSE-based) |
-
-5. Click **Save** / **Connect**
-6. Authorise the connection if Indeed prompts for OAuth or an API key
-
-#### Option B — Claude API (For Developers)
-
-If you are calling Claude via the API and want to include the Indeed MCP server programmatically, add the `mcp_servers` parameter to your request:
-
-```javascript
-const response = await fetch("https://api.anthropic.com/v1/messages", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    model: "claude-sonnet-4-20250514",
-    max_tokens: 1000,
-    messages: [
-      { role: "user", content: "Find me software engineer jobs in Doha" }
-    ],
-    mcp_servers: [
-      {
-        type: "url",
-        url: "https://mcp.indeed.com/claude/mcp",
-        name: "Indeed"
-      }
-    ]
-  })
-});
-```
-
-### Verifying the Connection
-
-Once connected, start a conversation and type:
+Simply start a conversation and say:
 
 ```
 Search Indeed for software engineer jobs in Doha, Qatar
 ```
 
-If Claude returns live job listings from Indeed (with job IDs and apply links), the connection is working correctly.
+Claude will scrape job listings, extract titles, companies, and descriptions, and present them in a match table.
 
-### What If Indeed MCP Is Not Connected?
+### Method 2 — MCP Server (Future / Custom)
 
-The skill still works without the MCP server. Claude will use **web search** to scrape Indeed job listings from `qa.indeed.com` (or the relevant country domain). The results are slightly less structured but functionally equivalent for CV generation.
+MCP (Model Context Protocol) is a standard that lets Claude connect to external services directly. If Indeed or a third party publishes an MCP-compatible job search server in the future, you can connect it for more structured results.
+
+> **⚠️ Note:** As of this writing, there is no official public Indeed MCP server available. The URL `https://mcp.indeed.com/claude/mcp` is a **placeholder** for illustration. If an official server becomes available, connect it via:
+>
+> 1. Go to **[claude.ai](https://claude.ai)** → your Project → **⚙ Settings** → **Integrations**
+> 2. Click **"Add MCP Server"**
+> 3. Enter the server name and URL
+> 4. Click **Save** / **Connect**
+
+If you have your own MCP-compatible job search server, you can connect it the same way.
+
+### Verifying Job Search Works
+
+Start a conversation inside your Project, upload your CV, and say:
+
+```
+Find me software engineer jobs in Doha, Qatar and tailor my CV
+```
+
+If Claude returns a table of job listings with titles, companies, and apply links, everything is working.
 
 ---
 
@@ -356,10 +339,10 @@ The skill works for any city with an Indeed presence. Common Gulf and internatio
 ## 10. Troubleshooting
 
 ### "I don't see the skill in my project"
-→ Make sure you are inside a **Project** (not a regular conversation). Skills only work in Projects. Re-upload the `.skill` file via Project Settings → Skills.
+→ Make sure you are inside a **Project** (not a regular conversation). Skills only work in Projects. Re-upload the `.skill` file via Project Settings → Skills. Alternatively, extract the ZIP and paste the `SKILL.md` content into your Project's Knowledge section.
 
 ### "Claude searched the web instead of using Indeed directly"
-→ The Indeed MCP server is not connected. Follow [Section 3](#3-how-to-connect-the-indeed-mcp-server) to connect it. The skill still works via web search as a fallback — job results are slightly less structured but CVs are still generated.
+→ Web search is the default and expected behaviour. See [Section 3](#3-how-job-searching-works) for details. If you have a custom MCP server configured, check that it's connected in Project Settings → Integrations.
 
 ### "Only a few jobs were found"
 → Claude will automatically run a 3rd broader search if deduplication leaves fewer than 10 results. If this still yields few results, try a broader phrase like "software engineer" instead of a very specific title.
@@ -374,8 +357,23 @@ The skill works for any city with an Indeed presence. Common Gulf and internatio
 → Simply say: "Now search for the same roles in Dubai, UAE" and Claude will re-run the job search and generate a new set of 10 CVs for the new location.
 
 ### "Claude generated fewer than 10 CVs"
-→ Claude is designed to always produce exactly 10. If it falls short, ask: "Please run an additional search and generate CVs for the remaining slots."
+→ Claude is designed to always produce exactly 10. If it falls short, ask: "Please run an additional search and generate CVs for the remaining slots." Note: generating all 10 in a single turn may occasionally hit output limits — see [Limitations](#11-limitations--known-constraints).
 
 ---
 
-*Skill version: 1.0 · Compatible with Claude claude-sonnet-4-20250514 and above · Indeed MCP server: `https://mcp.indeed.com/claude/mcp`*
+## 11. Limitations & Known Constraints
+
+This skill works well for most use cases, but here are honest notes on what to expect:
+
+| Constraint | Detail |
+|------------|--------|
+| **No official Indeed MCP server** | As of March 2026, Indeed has not published a public MCP server. The skill uses web search to find jobs, which works well but returns slightly less structured data than a direct API would. |
+| **Output length limits** | Generating 10 fully tailored DOCX files in a single conversation turn may occasionally hit Claude's output limits. If this happens, ask Claude to continue generating the remaining CVs. |
+| **Dashboard file size** | The HTML dashboard embeds all 10 DOCX files as base64, which can result in a large file (2–5 MB). Some browsers may be slow to render it. |
+| **Processing time** | Expect 2–5 minutes for the full workflow with a detailed CV. Longer CVs or slow network conditions may take longer. |
+| **Sandbox paths** | The skill's internal instructions reference paths specific to Claude's execution environment. These are handled automatically — you don't need to configure them. |
+| **Web search variability** | Job results from web search may vary between runs. Indeed's public pages may not always show the same listings. |
+
+---
+
+*Skill version: 1.1 · Compatible with Claude Sonnet 4 and above · [MIT License](LICENSE)*
